@@ -60,6 +60,8 @@ EXPOSE 3001
 VOLUME /config
 
 
-RUN sudo apt install curl ca-certificates -y \
-&& curl -s https://repo.waydro.id | sudo bash \
-&& sudo apt install waydroid -y
+RUN apt-get update && \
+  apt-get install -y curl ca-certificates kmod lsb-release && \
+  curl -s https://repo.waydro.id | bash && \
+  apt-get install -y waydroid && \
+  rm -rf /var/lib/apt/lists/*
