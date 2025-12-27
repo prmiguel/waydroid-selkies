@@ -1,0 +1,64 @@
+#!/bin/bash
+
+# Set up XDG_RUNTIME_DIR if not set
+if [ -z "$XDG_RUNTIME_DIR" ]; then
+    export XDG_RUNTIME_DIR="/tmp/runtime-$(id -u)"
+    if [ ! -d "$XDG_RUNTIME_DIR" ]; then
+        mkdir -p "$XDG_RUNTIME_DIR"
+        chmod 0700 "$XDG_RUNTIME_DIR"
+    fi
+fi
+
+# Start Weston if not running
+if [ -z "$WAYLAND_DISPLAY" ]; then
+    export WAYLAND_DISPLAY=wayland-1
+    if ! pgrep -x "weston" > /dev/null; then
+        echo "Starting Weston..."
+        # Launch weston in background, using X11 backend if DISPLAY is set, or headless/drm otherwise
+        # Note: In this container, we likely rely on X11 being present from the base image or running headless.
+        # Simple start:
+        weston --backend=x11-backend.so & 
+        
+        # Wait for socket
+        echo "Waiting for Wayland socket..."
+        count=0
+        while [ ! -e "$XDG_RUNTIME_DIR/$WAYLAND_DISPLAY" ]; do
+            sleep 1
+            count=$((count+1))
+            if [ $count -ge 10 ]; then
+                echo "Timeout waiting for Weston"
+                # Try fallback without specific backend or allow auto-detection
+                # But let's check failure first
+                exit 1
+            fi
+        done
+        echo "Weston started."
+    fi
+fi
+
+# Start Waydroid Container Service if not running
+if [ ! -S /run/waydroid/waydroid.socket ] && [ ! -S /var/lib/waydroid/waydroid.socket ]; then
+    echo "Starting Waydroid Container Service..."
+    # Check if we are root, if not try sudo
+    if [ "$(id -u)" -eq 0 ]; then
+        waydroid container start > /var/log/waydroid-container.log 2>&1 &
+    else
+        sudo waydroid container start > /tmp/waydroid-container.log 2>&1 &
+    fi
+    
+    # Wait for service to be ready
+    echo "Waiting for Waydroid Container Service..."
+    count=0
+    while [ ! -S /run/waydroid/waydroid.socket ] && [ ! -S /var/lib/waydroid/waydroid.socket ]; do
+        sleep 1
+        count=$((count+1))
+        if [ $count -ge 15 ]; then
+            echo "Timeout waiting for Waydroid Container Service"
+            # It might still work if the socket path is different, but let's warn
+            break
+        fi
+    done
+fi
+
+echo "Starting Waydroid session..."
+waydroid session start

@@ -61,7 +61,7 @@ VOLUME /config
 
 
 RUN apt-get update && \
-  apt-get install -y curl ca-certificates kmod lsb-release && \
+  apt-get install -y curl ca-certificates kmod lsb-release weston xwayland && \
   curl -s https://repo.waydro.id | bash && \
   apt-get install -y waydroid && \
   rm -rf /var/lib/apt/lists/*
