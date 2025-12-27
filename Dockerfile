@@ -1,6 +1,7 @@
 # syntax=docker/dockerfile:1
 
 FROM ghcr.io/linuxserver/baseimage-selkies:debiantrixie
+# FROM ghcr.io/linuxserver/baseimage-selkies:ubuntunoble
 
 # set version label
 ARG BUILD_DATE
@@ -51,8 +52,6 @@ RUN \
   /var/tmp/* \
   /tmp/*
 
-# add local files
-COPY /root /
 
 # ports and volumes
 EXPOSE 3001
@@ -65,3 +64,6 @@ RUN apt-get update && \
   curl -s https://repo.waydro.id | bash && \
   apt-get install -y waydroid && \
   rm -rf /var/lib/apt/lists/*
+
+# add local files
+COPY /root /
