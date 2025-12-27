@@ -61,4 +61,4 @@ if [ ! -S /run/waydroid/waydroid.socket ] && [ ! -S /var/lib/waydroid/waydroid.s
 fi
 
 echo "Starting Waydroid session..."
-waydroid session start
+waydroid session start  > /tmp/waydroid-session.log 2>&1 & 
