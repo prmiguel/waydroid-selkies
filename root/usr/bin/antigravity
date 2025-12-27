@@ -1,0 +1,8 @@
+#! /bin/bash
+
+BIN=/usr/bin/antigravity-real
+
+dbus-launch ${BIN} \
+  --no-sandbox \
+  --user-data-dir=/config \
+  "$@"
