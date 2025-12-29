@@ -1,7 +1,6 @@
 FROM ghcr.io/linuxserver/baseimage-selkies:ubuntunoble
 
 ENV TITLE=waydroid
-
 ENV PIXELFLUX_WAYLAND=true
 ENV WAYLAND_DISPLAY=wayland-1
 
