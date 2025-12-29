@@ -1,22 +1,6 @@
-# syntax=docker/dockerfile:1
-
-# FROM ghcr.io/linuxserver/baseimage-selkies:debiantrixie
 FROM ghcr.io/linuxserver/baseimage-selkies:ubuntunoble
 
-# set version label
-ARG BUILD_DATE
-ARG CODIUM_VERSION
-ARG VERSION
-LABEL build_version="Linuxserver.io version:- ${VERSION} Build-date:- ${BUILD_DATE}"
-LABEL maintainer="thelamer"
-
-# title
-ENV TITLE=VSCodium
-
-# ports and volumes
-EXPOSE 3001
-
-VOLUME /config
+ENV TITLE=waydroid
 
 ENV PIXELFLUX_WAYLAND=true
 ENV WAYLAND_DISPLAY=wayland-1
@@ -27,5 +11,7 @@ RUN apt-get update && \
   apt-get install -y waydroid && \
   rm -rf /var/lib/apt/lists/*
 
-# add local files
 COPY /root /
+
+EXPOSE 3001
+VOLUME /config
