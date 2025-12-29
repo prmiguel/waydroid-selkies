@@ -1,45 +1,5 @@
 #!/bin/bash
 
-# Set up XDG_RUNTIME_DIR if not set
-if [ -z "$XDG_RUNTIME_DIR" ]; then
-    export XDG_RUNTIME_DIR="/tmp/runtime-$(id -u)"
-    if [ ! -d "$XDG_RUNTIME_DIR" ]; then
-        mkdir -p "$XDG_RUNTIME_DIR"
-        chmod 0700 "$XDG_RUNTIME_DIR"
-    fi
-fi
-
-# Start Weston if not running
-if [ -z "$WAYLAND_DISPLAY" ]; then
-    export WAYLAND_DISPLAY=wayland-1
-        echo "Starting Weston..."
-        # Launch weston in background, using X11 backend if DISPLAY is set, or headless/drm otherwise
-        # Note: In this container, we likely rely on X11 being present from the base image or running headless.
-        # Simple start:
-        weston --backend=x11-backend.so --fullscreen --log=/tmp/weston.log > /tmp/weston.out 2>&1 &
-        WESTON_PID=$!
-        
-        # Wait for socket
-        echo "Waiting for Wayland socket..."
-        count=0
-        while [ ! -e "$XDG_RUNTIME_DIR/$WAYLAND_DISPLAY" ]; do
-            if ! kill -0 $WESTON_PID 2>/dev/null; then
-                echo "Weston died prematurely! Check /tmp/weston.log and /tmp/weston.out"
-                cat /tmp/weston.out
-                exit 1
-            fi
-            sleep 1
-            count=$((count+1))
-            if [ $count -ge 10 ]; then
-                echo "Timeout waiting for Weston"
-                # Try fallback without specific backend or allow auto-detection
-                # But let's check failure first
-                exit 1
-            fi
-        done
-        echo "Weston started (PID $WESTON_PID)."
-fi
-
 # Start Waydroid Container Service if not running
 if [ ! -S /run/waydroid/waydroid.socket ] && [ ! -S /var/lib/waydroid/waydroid.socket ]; then
     echo "Starting Waydroid Container Service..."
@@ -65,6 +25,5 @@ if [ ! -S /run/waydroid/waydroid.socket ] && [ ! -S /var/lib/waydroid/waydroid.s
 fi
 
 echo "Starting Waydroid session..."
-# waydroid session start  > /tmp/waydroid-session.log 2>&1 &
-# Using show-full-ui to launch the app window in Weston
-waydroid show-full-ui 
+# Using show-full-ui to launch the app window
+waydroid show-full-ui
