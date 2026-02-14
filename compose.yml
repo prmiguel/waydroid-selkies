@@ -1,0 +1,27 @@
+services:
+  waydroidu:
+    image: waydroidu
+    build:
+      context: .
+      dockerfile: Dockerfile.ubuntu
+    container_name: waydroidu
+    ports:
+      - "3001:3001"
+      - "5555:5555"
+      - "8081:8081"
+      - "8082:8082"
+    volumes:
+      - /lib/modules:/lib/modules:ro
+      # - /var/lib/waydroid:/var/lib/waydroid
+    devices:
+      - /dev/net/tun:/dev/net/tun
+    cap_add:
+      - NET_ADMIN
+      - SYS_MODULE
+    environment:
+      - TITLE=waydroidu
+      - PIXELFLUX_WAYLAND=true
+      - WAYLAND_DISPLAY=wayland-1
+    privileged: true  # Required for Waydroid
+    # stdin_open: true
+    # tty: true

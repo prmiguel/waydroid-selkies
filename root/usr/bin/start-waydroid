@@ -5,8 +5,14 @@ if [ ! -S /run/waydroid/waydroid.socket ] && [ ! -S /var/lib/waydroid/waydroid.s
     echo "Starting Waydroid Container Service..."
     # Check if we are root, if not try sudo
     if [ "$(id -u)" -eq 0 ]; then
+        waydroid init -f
+        # echo "ro.adb.secure = 1" >> /var/lib/waydroid/waydroid.cfg
+        # echo "ro.debuggable = 0" >> /var/lib/waydroid/waydroid.cfg
         waydroid container start > /var/log/waydroid-container.log 2>&1 &
     else
+        sudo waydroid init -f
+        # echo "ro.adb.secure = 1" | sudo tee -a /var/lib/waydroid/waydroid.cfg > /dev/null
+        # echo "ro.debuggable = 0" | sudo tee -a /var/lib/waydroid/waydroid.cfg > /dev/null
         sudo waydroid container start > /tmp/waydroid-container.log 2>&1 &
     fi
     
@@ -26,4 +32,42 @@ fi
 
 echo "Starting Waydroid session..."
 # Using show-full-ui to launch the app window
-waydroid show-full-ui
+waydroid show-full-ui > /tmp/waydroid-show-full-ui.log 2>&1 &
+
+# Wait for Waydroid to be fully running
+echo "Waiting for Waydroid to be fully running..."
+count=0
+while true; do
+    STATUS=$(waydroid status 2>/dev/null)
+    if echo "$STATUS" | grep -q "Session:.*RUNNING" && echo "$STATUS" | grep -q "Container:.*RUNNING"; then
+        echo "Waydroid is fully running."
+        break
+    fi
+    sleep 1
+    count=$((count+1))
+    if [ $count -ge 60 ]; then
+        echo "Timeout waiting for Waydroid to be fully running"
+        break
+    fi
+done
+
+# Enable ADB in Waydroid
+sleep 60
+echo "Enabling ADB in Waydroid..."
+if [ "$(id -u)" -eq 0 ]; then
+    waydroid shell settings put global adb_enabled 1
+    waydroid shell setprop persist.sys.usb.config adb
+    waydroid shell setprop service.adb.tcp.port 5555
+    waydroid shell setprop ctl.restart adbd
+    # waydroid adb connect
+else
+    sudo waydroid shell settings put global adb_enabled 1
+    sudo waydroid shell setprop persist.sys.usb.config adb
+    sudo waydroid shell setprop service.adb.tcp.port 5555
+    sudo waydroid shell setprop ctl.restart adbd
+    # sudo waydroid adb connect
+fi
+
+# Forward ADB port using socat
+echo "Starting socat port forward..."
+socat TCP-LISTEN:5555,fork,reuseaddr TCP:192.168.240.112:5555 &

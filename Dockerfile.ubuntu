@@ -1,16 +1,52 @@
 FROM ghcr.io/linuxserver/baseimage-selkies:ubuntunoble
 
-ENV TITLE=waydroid
-ENV PIXELFLUX_WAYLAND=true
-ENV WAYLAND_DISPLAY=wayland-1
+# Set build arguments for labels
+ARG BUILD_DATE
+ARG VERSION
+ARG VCS_REF
 
-RUN apt-get update && \
-  apt-get install -y curl ca-certificates kmod lsb-release xwayland adb && \
+# Set environment variables
+ENV TITLE=Waydroid \
+    PIXELFLUX_WAYLAND=true \
+    WAYLAND_DISPLAY=wayland-1
+
+# Add labels for metadata
+LABEL build_version="${VERSION:-unknown}" \
+      build_date="${BUILD_DATE:-unknown}" \
+      build_ref="${VCS_REF:-unknown}" \
+      maintainer="prmiguel"
+
+# Install packages and waydroid
+RUN \
+  echo "**** install packages ****" && \
+  apt-get update && \
+  apt-get install --no-install-recommends -y \
+    curl \
+    ca-certificates \
+    kmod \
+    lsb-release \
+    xwayland \
+    adb \
+    socat && \
+  echo "**** install waydroid ****" && \
   curl -s https://repo.waydro.id | bash && \
   apt-get install -y waydroid && \
-  rm -rf /var/lib/apt/lists/*
+  echo "**** cleanup ****" && \
+  apt-get autoclean && \
+  rm -rf \
+    /var/lib/apt/lists/* \
+    /var/tmp/* \
+    /tmp/*
 
+# RUN mkdir -p /etc/waydroid-extra/images
+COPY ./images/ /etc/waydroid-extra/images/
+
+
+# Copy root files
 COPY /root /
 
+# Expose port
 EXPOSE 3001
+
+# Volume for configuration
 VOLUME /config
